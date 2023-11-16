@@ -37,14 +37,20 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-fn walk_dirs(dir: &str) -> Result<(), Box<dyn Error>> {
-    let paths = fs::read_dir(dir)?;
-    for path in paths {
-        let path = path?;
-        dbg!(path.path());
-        if path.path().is_dir() && !is_hidden(&path) {
-            walk_dirs(path.path().to_str().unwrap())?;
+fn get_all_files(dir: &str) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+    let dir = fs::read_dir(dir)?;
+
+    let mut files: Vec<PathBuf> = Vec::new();
+    for entry in dir {
+        let entry = entry?;
+
+        if entry.path().is_dir() && !is_hidden(&entry) {
+            files.append(&mut get_all_files(entry.path().to_str().unwrap())?);
+        } else {
+            files.push(entry.path());
         }
     }
-    Ok(())
+
+    Ok(files)
+}
 }
