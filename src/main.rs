@@ -1,29 +1,69 @@
 use std::{
+    collections::HashMap,
     env,
     error::Error,
-    fs::{self, DirEntry},
+    fs::{self, DirEntry, File},
+    io::{self, BufRead},
+    path::PathBuf,
 };
+
+struct Language<'a> {
+    name: &'a str,
+    color: &'a str,
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if let Err(e) = walk_dirs(&args[1]) {
+    // dbg!(lines_of_code(&args[1]));
+    if let Err(e) = run(&args[1]) {
         eprintln!("Error: {e}");
     }
 }
 
 fn run(dir: &str) -> Result<(), Box<dyn Error>> {
-    let paths = fs::read_dir(dir)?;
-    for path in paths {
-        let path = path?;
-        if path.path().is_file() {
-            let ext = match path.path().extension() {
-                Some(x) => x.to_str().unwrap().to_owned(),
-                None => "none".to_string(),
-            };
+    let languages = HashMap::from([
+        (
+            "rs",
+            Language {
+                name: "Rust",
+                color: "idk",
+            },
+        ),
+        (
+            "go",
+            Language {
+                name: "Go",
+                color: "idk",
+            },
+        ),
+    ]);
 
-            println!("{ext}");
+    let mut found: HashMap<String, i32> = HashMap::new();
+
+    let files = get_all_files(dir)?;
+
+    for file in files {
+        let file_type = file.extension();
+
+        match file_type {
+            Some(ext) => {
+                let x = ext.to_str().unwrap();
+                if languages.contains_key(x) {
+                    let new_loc = lines_of_code(file.to_str().unwrap());
+                    found
+                        .entry(x.to_owned())
+                        .and_modify(|loc| *loc += new_loc)
+                        .or_insert(new_loc);
+                }
+            }
+            None => (),
         }
+    }
+
+    for (k, v) in found {
+        let name = languages.get(k.as_str()).unwrap().name;
+        println!("{name}, {v} loc");
     }
 
     Ok(())
@@ -53,4 +93,8 @@ fn get_all_files(dir: &str) -> Result<Vec<PathBuf>, Box<dyn Error>> {
 
     Ok(files)
 }
+
+fn lines_of_code(file_path: &str) -> i32 {
+    let file = File::open(file_path).unwrap();
+    io::BufReader::new(file).lines().count() as i32
 }
