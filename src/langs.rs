@@ -10,7 +10,7 @@ struct LanguageDB<'a> {
 
 impl<'a> LanguageDB<'a> {}
 
-pub fn print_color_bar(langs: Vec<(ansi_term::Color, f64)>) {
+pub fn color_bar(langs: Vec<(ansi_term::Color, f64)>) -> String {
     let total_length = 40;
     let mut bar = "".to_string();
     for lang in langs {
@@ -21,5 +21,6 @@ pub fn print_color_bar(langs: Vec<(ansi_term::Color, f64)>) {
             .to_string()
             .as_str();
     }
-    println!("{bar}");
+
+    bar
 }
