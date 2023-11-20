@@ -1,11 +1,15 @@
+use ansi_term::Color;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
 pub struct LanguageRecord<'a> {
-    extensions: Vec<&'a str>,
+    pub extensions: Vec<&'a str>,
     pub name: &'a str,
-    color: ansi_term::Color,
+    pub color: &'a str,
 }
 
-struct LanguageDB<'a> {
-    langs: Vec<LanguageRecord<'a>>,
+pub struct LanguageDB<'a> {
+    pub langs: Vec<LanguageRecord<'a>>,
 }
 
 impl<'a> LanguageDB<'a> {}
