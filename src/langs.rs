@@ -10,6 +10,20 @@ struct LanguageDB<'a> {
 
 impl<'a> LanguageDB<'a> {}
 
+pub fn hex_string_to_color(hex: &str) -> Result<Color, ()> {
+    let chars: Vec<char> = hex.chars().collect();
+    let mut rgb: [u8; 3] = [0; 3];
+
+    for i in (1..6).step_by(2) {
+        let mut dec = chars.get(i).ok_or(())?.to_digit(16).ok_or(())? as u8 * 16 as u8;
+        dec += chars.get(i + 1).ok_or(())?.to_digit(16).ok_or(())? as u8;
+
+        rgb[i / 2] = dec;
+    }
+
+    Ok(Color::RGB(rgb[0], rgb[1], rgb[2]))
+}
+
 pub fn color_bar(langs: Vec<(ansi_term::Color, f64)>) -> String {
     let total_length = 40;
     let mut bar = "".to_string();
