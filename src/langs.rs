@@ -1,18 +1,40 @@
+use std::collections::HashMap;
+
 use ansi_term::Color;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-pub struct LanguageRecord<'a> {
-    pub extensions: Vec<&'a str>,
-    pub name: &'a str,
-    pub color: &'a str,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LanguageRecord {
+    pub extensions: Vec<String>,
+    pub name: String,
+    pub color: String,
 }
 
-pub struct LanguageDB<'a> {
-    pub langs: Vec<LanguageRecord<'a>>,
+pub struct LanguageDB {
+    pub langs: Vec<LanguageRecord>,
+    pub ext_map: HashMap<String, usize>,
 }
 
-impl<'a> LanguageDB<'a> {}
+impl LanguageDB {
+    pub fn new(langs: Vec<LanguageRecord>) -> LanguageDB {
+        let mut ext_map: HashMap<String, usize> = HashMap::new();
+        for (i, lang) in langs.iter().enumerate() {
+            for ext in lang.extensions.iter() {
+                ext_map.insert(ext.to_owned(), i);
+            }
+        }
+        LanguageDB { langs, ext_map }
+    }
+
+    pub fn contains_ext(&self, ext: &str) -> bool {
+        self.ext_map.contains_key(ext)
+    }
+
+    pub fn get_by_ext(&self, ext: &str) -> &LanguageRecord {
+        let i = self.ext_map.get(ext).expect(format!("{}", ext).as_str());
+        self.langs.get(*i).unwrap()
+    }
+}
 
 pub fn hex_string_to_color(hex: &str) -> Result<Color, ()> {
     let chars: Vec<char> = hex.chars().collect();
