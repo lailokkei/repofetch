@@ -50,12 +50,12 @@ pub fn hex_string_to_color(hex: &str) -> Result<Color, ()> {
     Ok(Color::RGB(rgb[0], rgb[1], rgb[2]))
 }
 
-pub fn color_bar(langs: Vec<(ansi_term::Color, f64)>) -> String {
-    let total_length = 40;
+pub fn color_bar(fractions: Vec<(ansi_term::Color, f64)>) -> String {
+    let total_length = 50;
     let mut bar = "".to_string();
-    for lang in langs {
-        let length = (lang.1 * (total_length as f64)) as usize;
-        bar += lang
+    for fraction in fractions {
+        let length = (fraction.1 * (total_length as f64)) as usize;
+        bar += fraction
             .0
             .paint("█".repeat(length).as_str())
             .to_string()

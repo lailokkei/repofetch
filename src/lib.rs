@@ -1,4 +1,5 @@
-pub mod langs;
+pub mod files;
+mod langs;
 
 use std::{
     collections::HashMap,
@@ -8,86 +9,60 @@ use std::{
     path::PathBuf,
 };
 
-use langs::LanguageRecord;
-
-struct LangFraction {
-    lines: i32,
-    language: String,
-}
-
 pub fn run(dir: &str) -> Result<(), Box<dyn Error>> {
-    let languages: HashMap<&'static str, LanguageRecord<'_>> = HashMap::from([
-        // (
-        //     "rs",
-        //     LanguageRecord {
-        //         name: "Rust",
-        //         color: RGB::from_hex_string("#00ADD8"),
-        //     },
-        // ),
-        // (
-        //     "go",
-        //     LanguageRecord {
-        //         name: "Go",
-        //         color: RGB::from_hex_string("#00ADD8"),
-        //     },
-        // ),
-        // (
-        //     "c",
-        //     LanguageRecord {
-        //         name: "C",
-        //         color: RGB { r: 0, g: 0, b: 0 }
-        //     },
-        // ),
-    ]);
+    let lang_db = files::read_langs_file()?;
 
     let mut counter = LinesCounter::new();
 
     for file in get_all_files(dir)? {
-        let extension_option = file.extension();
-
-        match extension_option {
-            Some(extension) => {
-                let extension = extension.to_str().unwrap();
-                if languages.contains_key(extension) {
-                    let new_loc = lines_of_code(file.to_str().unwrap());
-                    counter.add_file(extension, new_loc);
-                }
+        if let Some(ext) = file.extension() {
+            let ext = ".".to_owned() + ext.to_str().unwrap();
+            if lang_db.contains_ext(ext.as_str()) {
+                let new_loc = lines_of_code(file.to_str().unwrap());
+                counter.add_file(ext.as_str(), new_loc);
             }
-            None => (),
+        } else {
         }
     }
 
     let mut total_lines = 0;
 
-    for (_, v) in counter.found.iter() {
+    for (_, v) in counter.langs_loc.iter() {
         total_lines += v;
     }
 
-    // let lang_fraction: Vec<(i32, String,)>
+    let mut color_fractions: Vec<(ansi_term::Color, f64)> = Vec::new();
 
-    for (k, v) in counter.found {
-        let x = languages.get(k.as_str()).unwrap().name;
-        let percentage = v as f64 / total_lines as f64 * 100.0;
-        println!("{x} {v} lines {:.1}%", percentage);
+    for (ext, loc) in counter.langs_loc {
+        let lang_record = lang_db.get_by_ext(ext.as_str());
+        let fraction = loc as f64 / total_lines as f64;
+        let percentage = fraction * 100.0;
+
+        let color = langs::hex_string_to_color(lang_record.color.as_str()).unwrap();
+        color_fractions.push((color, fraction));
+
+        println!("{} {loc} lines {:.1}%", lang_record.name, percentage);
     }
 
-    // print_color_bar()
+    println!("{}", langs::color_bar(color_fractions));
 
     Ok(())
 }
+
+#[derive(Debug)]
 struct LinesCounter {
-    found: HashMap<String, i32>,
+    langs_loc: HashMap<String, i32>,
 }
 
 impl LinesCounter {
     fn new() -> LinesCounter {
         LinesCounter {
-            found: HashMap::new(),
+            langs_loc: HashMap::new(),
         }
     }
 
     fn add_file(&mut self, lang: &str, lines: i32) {
-        self.found
+        self.langs_loc
             .entry(lang.to_owned())
             .and_modify(|loc| *loc += lines)
             .or_insert(lines);
